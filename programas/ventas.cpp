@@ -275,6 +275,15 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
                 com.comision = (prod.precio * com.cantidad) * TASA_COMISION;
             }
             else{
+                cout << "Error: no hay tanta cantidad del producto '" << codigoProd << "' disponible." << endl << endl;
+
+                cout << "Informacion del producto:" << endl;
+                cout << "Codigo de producto: " << prod.codigo << endl;
+                cout << "Descripcion: " << prod.descripcion << endl;
+                cout << "Cantidad disponible: " << prod.stock << endl << endl;
+
+                cout << "Reiniciando la comanda..." << endl << endl << endl << endl << endl;
+
                 reiniciarComanda = 1;
             }
         }
