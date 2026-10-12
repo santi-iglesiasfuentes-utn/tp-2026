@@ -44,12 +44,9 @@ int validarInfoMozo(int,char[]);
 int obtenerCantidadRegistrosArchivoMozos();
 int busquedaDirectaArchivoMozos(Mozo&,int);
 int obtenerLongitudCadenaCaracteres(char[]);
-Comanda cargarInfoComanda(int);
 int busquedaBinariaArchivoInventario(int,Producto&);
 int obtenerCantidadRegistrosArchivoInventario();
 bool verificarStockProducto(int,Producto);
-int ingresarCodigoProductoComanda(Producto&);
-int ingresarCantidadProductoComanda(bool&,Producto);
 void ordenarArchivoIDMozo(char[]);
 int obtenerCantidadRegistrosArchivoComandas(char[]);
 void cargarArrayComandasOrdenadoIDMozo(Comanda[],int&,char[]);
@@ -65,6 +62,7 @@ int main(){
 
     char fecha[11];
     bool fechaValida;
+
 
     cout << "Ingrese la fecha en formato 'DD-MM-AAAA': ";
     cin >> fecha;
@@ -173,6 +171,8 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
 
 
 
+        // Verificar la informacion del mozo: ------------------------------------------------------------------------------
+
         passwordMozo[20] = {0};
 
         cout << "Digite el ID de mozo: ";
@@ -216,8 +216,71 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
 
 
 
-        com = cargarInfoComanda(idMozo);
 
+
+        // Cargar la informacion de la comanda:   -----------------------------------------------------------------
+
+        int reiniciarComanda = 1;
+
+        int codigoProd;
+        int posProd;
+        Producto prod;
+
+        int cantUnidades;
+        bool hayStock;
+
+
+
+
+        com.idMozo = idMozo;
+
+        while(reiniciarComanda == 1){
+            cout << "Ingrese el codigo de producto: ";
+            cin >> codigoProd;
+
+            posProd = busquedaBinariaArchivoInventario(codigoProd , prod);
+
+            while(posProd == -1){
+                cout << "Error: el codigo de producto ingresado no existe." << endl << endl;
+
+                cout << "Ingrese el codigo de producto: ";
+                cin >> codigoProd;
+
+                posProd = busquedaBinariaArchivoInventario(codigoProd , prod);
+            }
+
+            com.codigoProducto = codigoProd;
+
+
+
+
+            cout << "Digite la cantidad de unidades: ";
+            cin >> cantUnidades;
+
+            while(cantUnidades <= 0){
+                cout << "Error: el numero ingresado es invalido." << endl << endl;
+
+                cout << "Digite la cantidad de unidades: ";
+                cin >> cantUnidades;
+            }
+
+            hayStock = verificarStockProducto(cantUnidades , prod);
+
+            if(hayStock == true){
+                reiniciarComanda = 0;
+
+                com.cantidad = cantUnidades;
+
+                // Calculando comision:
+                com.comision = (prod.precio * com.cantidad) * TASA_COMISION;
+            }
+            else{
+                reiniciarComanda = 1;
+            }
+        }
+
+
+        // Escribir la comanda en el archivo:
         fwrite(&com , sizeof(Comanda) , 1 , archivoComandas);
 
 
@@ -322,42 +385,6 @@ int obtenerLongitudCadenaCaracteres(char cadena[]){
     return longitud;
 }
 
-Comanda cargarInfoComanda(int idMozo){
-    Comanda com;
-
-    Producto prod;
-    bool hayStock;
-    int reiniciarComanda = 1;
-
-
-
-    com.idMozo = idMozo;
-
-    while(reiniciarComanda == 1){
-        com.codigoProducto = ingresarCodigoProductoComanda(prod);
-
-        com.cantidad = ingresarCantidadProductoComanda(hayStock , prod);
-
-        if(hayStock == true){
-            reiniciarComanda = 0;
-        }
-        else{
-            cout << "Error: no hay tanta cantidad de stock del producto." << endl << endl;
-
-            cout << "Producto: " << prod.descripcion << endl;
-            cout << "Codigo: " << prod.codigo << endl;
-            cout << "Stock disponible: " << prod.stock << endl << endl;
-
-            reiniciarComanda = 1;
-        }
-    }
-
-    com.comision = (prod.precio * com.cantidad) * TASA_COMISION;
-
-
-    return com;
-}
-
 int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
     FILE* archivo = fopen("inventario.dat" , "rb");
 
@@ -434,58 +461,7 @@ bool verificarStockProducto(int cantidad, Producto prod){
     return hayStock;
 }
 
-int ingresarCodigoProductoComanda(Producto &prod){
-    int codProd;
-    int posProd;
-    
-    cout << "Digite el codigo de producto: ";
-    cin >> codProd;
-
-    posProd = busquedaBinariaArchivoInventario(codProd , prod);
-
-    while(posProd == -1){
-        cout << "Error: el codigo de producto ingresado no existe." << endl << endl;
-
-        cout << "Digite el codigo de producto: ";
-        cin >> codProd;
-
-        posProd = busquedaBinariaArchivoInventario(codProd , prod);
-    }
-
-    return codProd;
-}
-
-int ingresarCantidadProductoComanda(bool& hayStock, Producto prod){
-    int cant;
-
-    cout << "Ingrese la cantidad de unidades: ";
-    cin >> cant;
-
-    hayStock = verificarStockProducto(cant , prod);
-
-    return cant;
-}
-
 void ordenarArchivoIDMozo(char nombreArchivo[]){
-    // if(cantRegs != -1){
-    //     int cargado = 0;
-
-    //     Comanda comandas[cantRegs];
-    //     int len = 0;
-
-    //     cargado = cargarArrayComandas(comandas , len , nombreArchivo);
-
-    //     if(cargado != -1){
-    //         actualizarArchivo(comandas , len , nombreArchivo);
-    //     }
-    //     else{
-    //         cout << "No se ha podido ordenar el 'archivo de comandas'." << endl; 
-    //     }
-    // }
-    // else{
-    //     cout << "No se ha podido ordenar el 'archivo de comandas'." << endl; 
-    // }
-
     int cantRegs = obtenerCantidadRegistrosArchivoComandas(nombreArchivo);
 
     if(cantRegs != -1){
