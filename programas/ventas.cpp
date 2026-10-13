@@ -36,6 +36,11 @@ struct Producto {
 
 
 
+// Prototipos de funciones "generales":
+int obtenerLongitudCadenaCaracteres(char[]);
+void inicializarCadenaCaracteres(char[],int);
+
+
 // Prototipos de funciones:
 bool validarFecha(char[]);
 void generarNombreArchivoComandas(char[],char[]);
@@ -43,22 +48,19 @@ void cargarComandasEnArchivo(char[],char[]);
 int validarInfoMozo(int,char[]);
 int obtenerCantidadRegistrosArchivoMozos();
 int busquedaDirectaArchivoMozos(Mozo&,int);
-int obtenerLongitudCadenaCaracteres(char[]);
 int busquedaBinariaArchivoInventario(int,Producto&);
-int obtenerCantidadRegistrosArchivoInventario();
 bool verificarStockProducto(int,Producto);
-void ordenarArchivoIDMozo(char[]);
-int obtenerCantidadRegistrosArchivoComandas(char[]);
-void cargarArrayComandasOrdenadoIDMozo(Comanda[],int&,char[]);
+void ordenarArchivoComandasIDMozo(char[]);
+int obtenerCantidadRegistrosArchivoComandas(FILE*);
 void insertarOrdenadoArrayComandasIDMozo(Comanda[],int&,Comanda);
 void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
-void actualizarArchivo(Comanda[],int,char[]);
 
 
 
 
 int main(){
-    char nombreArchivoComandas[30] = {0};
+    char nombreArchivoComandas[30];
+    inicializarCadenaCaracteres(nombreArchivoComandas , 30);
 
     char fecha[11];
     bool fechaValida;
@@ -82,16 +84,39 @@ int main(){
     cout << endl << endl << endl;
 
 
+
+
     generarNombreArchivoComandas(nombreArchivoComandas , fecha);
 
     cargarComandasEnArchivo(fecha , nombreArchivoComandas);
 
-    ordenarArchivoIDMozo(nombreArchivoComandas);
+    ordenarArchivoComandasIDMozo(nombreArchivoComandas);
+
 
 
     return 0;
 }
 
+
+
+
+// Funciones "generales":
+
+int obtenerLongitudCadenaCaracteres(char cadena[]){
+    int longitud = 0;
+    
+    for(int i = 0 ; cadena[i] != '\0' ; i++){
+        longitud++;
+    }
+
+    return longitud;
+}
+
+void inicializarCadenaCaracteres(char cadena[], int max){
+    for(int i = 0 ; i < max ; i++){
+        cadena[i] = 0;
+    }
+}
 
 
 
@@ -117,16 +142,14 @@ bool validarFecha(char fecha[]){
         }
     }
     else{
-        if(mes == 2 && anio % 4 == 0){
-            if(dia >= 1 && dia <= 29){
-                fechaValida = true;
-            }
-        }
-        else{
-            if(mes == 2){
-                if(dia >= 1 && dia <= 28){
+        if(mes == 2){
+            if(anio % 4 == 0){
+                if(dia >= 1 && dia <=29){
                     fechaValida = true;
                 }
+            }
+            else if(dia >= 1 && dia <= 28){
+                fechaValida = true;
             }
         }
     }
@@ -142,9 +165,6 @@ void generarNombreArchivoComandas(char nombreArchivo[], char fecha[]){
 }
 
 void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
-    cout << "\t\t.:: Comandas " << fecha << " ::." << endl << endl;
-
-
     FILE* archivoComandas = fopen(nombreArchivo , "wb");
 
     if(archivoComandas == NULL){
@@ -167,13 +187,13 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
 
 
     while(opc == 's'){
-        cout << "Archivo del dia: " << fecha << endl << endl;
+        cout << "\t\t.:: Comandas " << fecha << " ::." << endl << endl;
 
 
 
         // Verificar la informacion del mozo: ------------------------------------------------------------------------------
 
-        passwordMozo[20] = {0};
+        inicializarCadenaCaracteres(passwordMozo , 20);
 
         cout << "Digite el ID de mozo: ";
         cin >> idMozo;
@@ -196,7 +216,7 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
             cout << "Error: la informacion del mozo es incorrecta." << endl << endl;
 
 
-            passwordMozo[20] = {0};
+            inicializarCadenaCaracteres(passwordMozo , 20);
 
             cout << "Digite el ID de mozo: ";
             cin >> idMozo;
@@ -296,7 +316,7 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
         cout << "\n\nCargar una nueva comanda (s/n): ";
         cin >> opc;
 
-        cout << endl << endl << endl;
+        cout << endl << endl << endl << endl << endl;
     }
 
     fclose(archivoComandas);
@@ -384,16 +404,6 @@ int busquedaDirectaArchivoMozos(Mozo& mozo, int idMozo){
     return leido;
 }
 
-int obtenerLongitudCadenaCaracteres(char cadena[]){
-    int longitud = 0;
-    
-    for(int i = 0 ; cadena[i] != '\0' ; i++){
-        longitud++;
-    }
-
-    return longitud;
-}
-
 int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
     FILE* archivo = fopen("inventario.dat" , "rb");
 
@@ -405,13 +415,14 @@ int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
         return -1;
     }
     
-    int posProd = -1;
-
-    int cantRegs = obtenerCantidadRegistrosArchivoInventario();
+    
+    fseek(archivo , 0 , SEEK_END);
+    int cantRegs = ftell(archivo) / sizeof(Producto);
 
     long izquierda = 0;
     long derecha = cantRegs - 1;
     long medio;
+    int posProd = -1;
 
     while(izquierda <= derecha && posProd == -1){
         medio = (izquierda + derecha) / 2;
@@ -435,28 +446,6 @@ int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
     return posProd;
 }
 
-int obtenerCantidadRegistrosArchivoInventario(){
-    FILE* archivo = fopen("inventario.dat" , "rb");
-
-    if(archivo == NULL){
-        cout << "Error: el 'archivo de inventario' no se ha abierto correctamente." << endl;
-        
-        cout << "No se ha podido obtener la cantidad de registros del archivo." << endl;
-
-        return -1;
-    }
-
-
-    fseek(archivo , 0 , SEEK_END);
-
-    int cantRegs = ftell(archivo) / sizeof(Producto);
-
-    fclose(archivo);
-
-
-    return cantRegs;
-}
-
 bool verificarStockProducto(int cantidad, Producto prod){
     bool hayStock;
 
@@ -470,58 +459,56 @@ bool verificarStockProducto(int cantidad, Producto prod){
     return hayStock;
 }
 
-void ordenarArchivoIDMozo(char nombreArchivo[]){
-    int cantRegs = obtenerCantidadRegistrosArchivoComandas(nombreArchivo);
+void ordenarArchivoComandasIDMozo(char nombreArchivo[]){
+    FILE* archivoComandas = fopen(nombreArchivo , "rb+");
 
-    if(cantRegs != -1){
-        Comanda comandas[cantRegs];
-        int len = 0;
-
-        cargarArrayComandasOrdenadoIDMozo(comandas , len , nombreArchivo);
-
-        actualizarArchivo(comandas , len , nombreArchivo);
-    }
-}
-
-int obtenerCantidadRegistrosArchivoComandas(char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "rb");
-
-    if(archivo == NULL){
+    if(archivoComandas == NULL){
         cout << "Error: el 'archivo de comandas' no se ha abierto correctamente." << endl;
 
-        cout << "No se ha podido obtener la 'cantidad de registros' del archivo de comandas." << endl;
-
-        return -1;
-    }
-
-    fseek(archivo , 0 , SEEK_END);
-
-    int cantRegs = ftell(archivo) / sizeof(Comanda);
-
-    fclose(archivo);
-
-
-    return cantRegs;
-}
-
-void cargarArrayComandasOrdenadoIDMozo(Comanda comandas[], int& len, char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "rb");
-
-    if(archivo == NULL){
-        cout << "Error: el 'archivo de comandas' no se ha abierto correctamente." << endl;
-
-        cout << "No se ha podido 'cargar el array de comandas'." << endl;
+        cout << "No se ha podido 'ordenar el archivo'." << endl;
 
         return;
     }
 
+    int cantRegs = obtenerCantidadRegistrosArchivoComandas(archivoComandas);
+
+    Comanda comandas[cantRegs];
+    int len = 0;
+
     Comanda com;
 
-    while(fread(&com , sizeof(Comanda) , 1 , archivo) == 1){
+    while(fread(&com , sizeof(Comanda) , 1 , archivoComandas) == 1){
         insertarOrdenadoArrayComandasIDMozo(comandas , len , com);
     }
 
-    fclose(archivo);
+
+
+    // Posicionando el puntero al principio del archivo:
+    fseek(archivoComandas , 0 , SEEK_SET);
+
+
+    for(int i = 0 ; i < len ; i++){
+        fwrite(&comandas[i] , sizeof(Comanda) , 1 , archivoComandas);
+    }
+
+    fclose(archivoComandas);
+}
+
+int obtenerCantidadRegistrosArchivoComandas(FILE* archivo){
+    int cantRegs;
+    long posInicial = ftell(archivo);
+
+
+    // Posicionando el puntero al final del archivo:
+    fseek(archivo , 0 , SEEK_END);
+
+    cantRegs = ftell(archivo) / sizeof(Comanda);
+
+    // Devolviendo el puntero a la posicion inicial:
+    fseek(archivo , posInicial , SEEK_SET);
+
+
+    return cantRegs;
 }
 
 void insertarOrdenadoArrayComandasIDMozo(Comanda comandas[], int& len, Comanda com){
@@ -547,22 +534,4 @@ void insertarPosEspecificaArrayComandas(Comanda comandas[], int& len, Comanda co
 
     comandas[pos] = com;
     len++;
-}
-
-void actualizarArchivo(Comanda comandas[], int len, char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "wb");
-
-    if(archivo == NULL){
-        cout << "Error: el 'archivo de comandas' no se ha abierto correctamente." << endl;
-
-        cout << "No se ha podido 'actualizar el archivo'." << endl;
-
-        return;
-    }
-
-    for(int i = 0 ; i < len ; i++){
-        fwrite(&comandas[i] , sizeof(Comanda) , 1 , archivo);
-    }
-
-    fclose(archivo);
 }

@@ -38,6 +38,7 @@ struct Producto {
 
 
 // Prototipos de funciones:
+void inicializarCadenaCaracteres(char[],int);
 
 // Prototipos de funciones de "archivo de inventario:"
 void actualizarArchivoInventario(Comanda);
@@ -47,7 +48,6 @@ void modificarRegistroEspecifico(long,Comanda);
 // Prototipos de funciones de 'mozos':
 int busquedaSecArchivoMozos(char[]);
 Mozo crearMozo(Comanda_historica,int);
-void inicializarPasswordMozo(char[],int);
 void crearContraseniaMozo(char[],int,char[]);
 void cargarMozoArchivoMozos(Mozo);
 void modificarComisionesMozoArchivoMozos(int,Comanda_historica);
@@ -56,11 +56,10 @@ void modificarComisionesMozoArchivoMozos(int,Comanda_historica);
 Comanda cargarInfoComanda(Comanda_historica);
 void obtenerMozoPosEspecificaArchivoMozos(int,Mozo&);
 void agregarComandaArchivoComandasDia(char[],Comanda);
-void reiniciarNombreArchivoComandasDia(char[]);
 void ordenarArchivoComandasDia(char[]);
 int obtenerCantidadRegistrosArchivoComandas(FILE*);
-void insertarOrdenadoArrayComandasDia(Comanda[],int&,Comanda);
-void insertarPosEspecificaArrayComandasDia(Comanda[],int&,Comanda,int);
+void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
+void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
 
 
 
@@ -87,8 +86,7 @@ int main(){
 
 
         while( fread(&com , sizeof(Comanda_historica) , 1 , archivoComandas) == 1 ){
-            // Reinciando variables:
-            reiniciarNombreArchivoComandasDia(nombreArchivoComandasDia);
+            inicializarCadenaCaracteres(nombreArchivoComandasDia , 30);
 
             // cout << "Numero de comanda: " << numComanda << endl;
 
@@ -123,7 +121,7 @@ int main(){
             /* Comanda: ---------------------------------------------------------------*/
 
             // Creando el nombre del archivo de dias:
-            strcat(nombreArchivoComandasDia , "comandas_");
+            strcpy(nombreArchivoComandasDia , "comandas_");
             strcat(nombreArchivoComandasDia , com.fecha);
             strcat(nombreArchivoComandasDia , ".dat");
 
@@ -149,7 +147,7 @@ int main(){
         fclose(archivoComandas);
     }
     else{
-        cout << "Error: el archivo de comandas historicas no se ha abierto correctamente." << endl;
+        cout << "Error: el 'archivo de comandas historicas' no se ha abierto correctamente." << endl;
     }
 
     return 0;
@@ -161,6 +159,14 @@ int main(){
 
 
 // Funciones:
+
+void inicializarCadenaCaracteres(char cadena[], int max){
+    for(int i = 0 ; i < max ; i++){
+        cadena[i] = 0;
+    }
+}
+
+
 
 // Funciones de "inventario":
 
@@ -224,7 +230,8 @@ void modificarRegistroEspecifico(long posProd, Comanda com){
     FILE* archivo = fopen("inventario.dat" , "rb+");
 
     if(archivo == NULL){
-        cout << "Error: el archivo de 'inventario' no se ha abierto correctamente." << endl;
+        cout << "Error: el 'archivo de inventario' no se ha abierto correctamente." << endl;
+
         cout << "No se ha podido modificar el stock restante." << endl;
 
         return;
@@ -280,23 +287,15 @@ Mozo crearMozo(Comanda_historica com, int idMozo){
     Mozo m;
 
     m.idMozo = idMozo;
-
     strcpy(m.nombre , com.nombreMozo);
 
-
-    inicializarPasswordMozo(m.password , 20);
+    inicializarCadenaCaracteres(m.password , 20);
     crearContraseniaMozo(m.nombre , 50 , m.password);
 
 
-    m.totalComision += com.comision;
+    m.totalComision = com.comision;
 
     return m;
-}
-
-void inicializarPasswordMozo(char password[], int max){
-    for(int i = 0 ; i < max ; i++){
-        password[i] = 0;
-    }
 }
 
 void crearContraseniaMozo(char nombreMozo[], int maxNombre, char password[]){
@@ -308,9 +307,10 @@ void crearContraseniaMozo(char nombreMozo[], int maxNombre, char password[]){
         i++;
     }
 
-    // Realizando sumas en cada posicion de la 'password':
-    for(int i = 0 ; password[i] != '\0' ; i++){
-        password[i] += 5;
+
+    // Sumando 5 unidades a cada caracter de la 'password':
+    for(int j = 0 ; password[j] != '\0' ; j++){
+        password[j] += 5;
     }
 }
 
@@ -343,16 +343,20 @@ void modificarComisionesMozoArchivoMozos(int posMozo, Comanda_historica com){
 
     Mozo mozo;
 
+
     // Modificar el registro especifico:
     fseek(archivoMozos , posMozo * sizeof(Mozo) , SEEK_SET);
 
     fread(&mozo , sizeof(Mozo) , 1 , archivoMozos);
 
+
     mozo.totalComision += com.comision;
+
 
     fseek(archivoMozos , -1 * (long)sizeof(Mozo) , SEEK_CUR);
 
     fwrite(&mozo , sizeof(Mozo) , 1 , archivoMozos);
+
 
     fclose(archivoMozos);
 }
@@ -400,7 +404,7 @@ void obtenerMozoPosEspecificaArchivoMozos(int pos, Mozo& infoMozo){
 }
 
 void agregarComandaArchivoComandasDia(char nombreArchivo[], Comanda com){
-    FILE* archivo = fopen(nombreArchivo , "ab+");
+    FILE* archivo = fopen(nombreArchivo , "ab");
 
     if(archivo != NULL){
         fwrite(&com , sizeof(Comanda) , 1 , archivo);
@@ -408,15 +412,9 @@ void agregarComandaArchivoComandasDia(char nombreArchivo[], Comanda com){
         fclose(archivo);
     }
     else{
-        cout << "Error: el archivo no se ha abierto correctamente." << endl;
+        cout << "Error: el 'archivo de comandas' no se ha abierto correctamente." << endl;
 
         cout << "No se ha podido cargar la comanda en el archivo correspondiente." << endl;
-    }
-}
-
-void reiniciarNombreArchivoComandasDia(char nombreArchivoComandasDia[]){
-    for(int i = 0 ; nombreArchivoComandasDia[i] != '\0' ; i++){
-        nombreArchivoComandasDia[i] = 0;
     }
 }
 
@@ -439,7 +437,7 @@ void ordenarArchivoComandasDia(char nombreArchivoComandas[]){
     Comanda aux;
 
     while(fread(&aux , sizeof(Comanda) , 1 , archivo) == 1){
-        insertarOrdenadoArrayComandasDia(comandasDia , len , aux);
+        insertarOrdenadoIDMozoArrayComandas(comandasDia , len , aux);
     }
 
 
@@ -470,7 +468,7 @@ int obtenerCantidadRegistrosArchivoComandas(FILE* archivo){
     return cantRegs;
 }
 
-void insertarOrdenadoArrayComandasDia(Comanda comandasDia[], int& len, Comanda com){
+void insertarOrdenadoIDMozoArrayComandas(Comanda comandasDia[], int& len, Comanda com){
     int i = 0;
 
     while(i < len && comandasDia[i].idMozo < com.idMozo){
@@ -482,11 +480,11 @@ void insertarOrdenadoArrayComandasDia(Comanda comandasDia[], int& len, Comanda c
         len++;
     }
     else{
-        insertarPosEspecificaArrayComandasDia(comandasDia , len , com , i);
+        insertarPosEspecificaArrayComandas(comandasDia , len , com , i);
     }
 }
 
-void insertarPosEspecificaArrayComandasDia(Comanda comandasDia[], int& len, Comanda com, int pos){
+void insertarPosEspecificaArrayComandas(Comanda comandasDia[], int& len, Comanda com, int pos){
     for(int i = len ; i > pos ; i--){
         comandasDia[i] = comandasDia[i-1];
     }

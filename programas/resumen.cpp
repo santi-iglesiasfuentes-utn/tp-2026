@@ -28,9 +28,9 @@ void mostrarInformacionArchivo(char[],char[],char[]);
 int main(){
     cout << "\t\t.:: Resumen ::." << endl << endl;
 
-    char nombreArchivo[30] = {0};
-    char numSemana[2] = {0};
-    char mes[3] = {0};
+    char nombreArchivo[30];
+    char numSemana[2];
+    char mes[3];
 
     int mesInt;
 
@@ -137,7 +137,7 @@ void mostrarInformacionArchivo(char nombreArchivo[], char mes[], char numSemana[
         fclose(archivo);
     }
     else{
-        cout << "Error: el archivo no se ha abierto correctamente." << endl;
+        cout << "Error: el 'archivo de comandas semanal' no se ha abierto correctamente." << endl;
 
         cout << "No se pudo mostrar la informacion del archivo semanal." << endl;
     }

@@ -22,39 +22,59 @@ struct Dia {
 
 
 
+// Prototipos de funciones "generales":
+void inicializarCadenaCaracteres(char[],int);
+
+
 // Prototipos de funciones:
+bool validarFecha(char[]);
 void separarFecha(char[],char[],char[],char[]);
 void generarNombreArchivoComandasSemana(char[],char[],char[]);
 void generarNombreArchivoComandasDia(char[],char[],char[],char[]);
-void cargarComandasArchivoSemanal(char[],FILE*,char[],char[],char[]);
+void cargarComandasDiaArchivoSemanal(char[],FILE*,char[],char[],char[]);
 int obtenerCantDiasMes(char[],char[]);
 int obtenerNumeroDiaActual(char[]);
 void avanzarDia(char[],Dia&);
 void cargarArchivoSemanal(char[],Dia,int,char[],char[],char[]);
 void ordenarArchivoIDMozo(char[]);
-int obtenerCantidadRegistrosArchivo(char[]);
-void cargarArrayComandasOrdenadoIDMozo(Comanda[],int&,char[]);
-void insertarOrdenadoArrayIDMozo(Comanda[],int&,Comanda);
-void insertarPosEspecificaArray(Comanda[],int&,Comanda,int);
-void actualizarArchivo(Comanda[],int,char[]);
+int obtenerCantidadRegistrosArchivoComandas(FILE*);
+void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
+void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
 
 
 
 int main(){
     cout << "\t\t.:: Programa de 'cierre' ::." << endl << endl;
 
-    char nombreArchivoSemanal[30] = {0};
-    char numSemana[2] = {0};
+    char nombreArchivoSemanal[30];
+    inicializarCadenaCaracteres(nombreArchivoSemanal , 30);
 
-    char fecha[11] = {0};
-    char dia[3] = {0};
-    char mes[3] = {0};
-    char anio[5] = {0};
+    char numSemana[2];
+
+    char fecha[11];
+    bool fechaValida;
+
+    char dia[3];
+    char mes[3];
+    char anio[5];
     Dia diaActual;
     int cantDiasMes;
 
-    cout << "Ingrese la fecha del primer dia de la semana en formato 'dd-mm-aaaa': ";
+
+
+    cout << "Ingrese la fecha del primer dia de la semana en formato 'DD-MM-AAAA': ";
     cin >> fecha;
+
+    fechaValida = validarFecha(fecha);
+
+    while(fechaValida == false){
+        cout << "Error: la fecha ingresada es invalida." << endl << endl;
+
+        cout << "Ingrese la fecha del primer dia de la semana en formato 'DD-MM-AAAA': ";
+        cin >> fecha;
+
+        fechaValida = validarFecha(fecha);
+    }
 
     cout << "Ingrese el nombre del primer dia de la semana: ";
     cin >> diaActual.nombre;
@@ -62,17 +82,19 @@ int main(){
     cout << "Ingrese el numero de semana del mes actual: ";
     cin >> numSemana;
 
+
     separarFecha(dia , mes , anio , fecha);
     cantDiasMes = obtenerCantDiasMes(mes , anio);
     diaActual.numero = obtenerNumeroDiaActual(dia);
 
-    generarNombreArchivoComandasSemana(numSemana , mes , nombreArchivoSemanal);
 
+
+    generarNombreArchivoComandasSemana(numSemana , mes , nombreArchivoSemanal);
 
     cargarArchivoSemanal(nombreArchivoSemanal , diaActual , cantDiasMes , dia , mes , anio);
 
-
     ordenarArchivoIDMozo(nombreArchivoSemanal);
+
 
 
     cout << "\n\nSe ha generado el archivo de:" << endl;
@@ -84,7 +106,52 @@ int main(){
 
 
 
+
+// Funciones "generales":
+
+void inicializarCadenaCaracteres(char cadena[], int max){
+    for(int i = 0 ; i < max ; i++){
+        cadena[i] = 0;
+    }
+}
+
+
+
+
 // Funciones:
+
+bool validarFecha(char fecha[]){
+    bool fechaValida = false;
+
+    int dia = (fecha[0] - 48) * 10 + (fecha[1] - 48);
+    int mes = (fecha[3] - 48) * 10 + (fecha[4] - 48);
+    int anio = (fecha[6] - 48) * 1000 + (fecha[7] - 48) * 100 + (fecha[8] - 48) * 10 + (fecha[9] - 48);
+
+    if(mes == 1 || mes == 3 || mes == 5 || mes == 7 || mes == 8 || mes == 10 || mes == 12){
+        if(dia >= 1 && dia <= 31){
+            fechaValida = true;
+        }
+    }
+    else if(mes == 4 || mes == 6 || mes == 9 || mes == 11){
+        if(dia >= 1 && dia <= 30){
+            fechaValida = true;
+        }
+    }
+    else{
+        if(mes == 2){
+            if(anio % 4 == 0){
+                if(dia >= 1 && dia <=29){
+                    fechaValida = true;
+                }
+            }
+            else if(dia >= 1 && dia <= 28){
+                fechaValida = true;
+            }
+        }
+    }
+
+    return fechaValida;
+}
 
 void separarFecha(char dia[], char mes[], char anio[], char fecha[]){
     dia[0] = fecha[0];
@@ -122,7 +189,7 @@ void generarNombreArchivoComandasDia(char dia[], char mes[], char anio[], char n
     strcat(nombreArchivo , ".dat");
 }
 
-void cargarComandasArchivoSemanal(char nombreArchivo[], FILE* archivoSemana, char dia[], char mes[], char anio[]){
+void cargarComandasDiaArchivoSemanal(char nombreArchivo[], FILE* archivoSemana, char dia[], char mes[], char anio[]){
     FILE* archivoComandasDia = fopen(nombreArchivo , "rb");
 
     if(archivoComandasDia != NULL){
@@ -216,12 +283,12 @@ void cargarArchivoSemanal(char nombreArchivo[], Dia diaActual, int cantDiasMes, 
         int i = 0;
 
         while(i < 6 && diaActual.numero <= cantDiasMes && strcmp(diaActual.nombre , "domingo") != 0){
-            nombreArchivoComandasDia[30] = {0};
+            inicializarCadenaCaracteres(nombreArchivoComandasDia , 30);
 
 
             generarNombreArchivoComandasDia(dia , mes , anio , nombreArchivoComandasDia);
 
-            cargarComandasArchivoSemanal(nombreArchivoComandasDia , archivoSemanal , dia , mes , anio);
+            cargarComandasDiaArchivoSemanal(nombreArchivoComandasDia , archivoSemanal , dia , mes , anio);
 
 
             avanzarDia(dia , diaActual);
@@ -238,61 +305,56 @@ void cargarArchivoSemanal(char nombreArchivo[], Dia diaActual, int cantDiasMes, 
 }
 
 void ordenarArchivoIDMozo(char nombreArchivo[]){
-    int cantRegs = obtenerCantidadRegistrosArchivo(nombreArchivo);
+    FILE* archivoSemanal = fopen(nombreArchivo , "rb+");
 
-    if(cantRegs != -1){
-        Comanda comandas[cantRegs];
-        int len = 0;
+    if(archivoSemanal == NULL){
+        cout << "Error: el 'archivo de comandas semanal' no se ha abierto correctamente." << endl;
 
-        cargarArrayComandasOrdenadoIDMozo(comandas , len , nombreArchivo);
+        cout << "No se ha podido 'ordenar el archivo'." << endl;
 
-        actualizarArchivo(comandas , len , nombreArchivo);
+        return;
     }
+
+    int cantRegs = obtenerCantidadRegistrosArchivoComandas(archivoSemanal);
+
+    Comanda comandas[cantRegs];
+    int len = 0;
+
+    Comanda com;
+
+    while(fread(&com , sizeof(Comanda) , 1 , archivoSemanal) == 1){
+        insertarOrdenadoIDMozoArrayComandas(comandas , len , com);
+    }
+
+
+    // Posicionando el puntero al inicio del archivo:
+    fseek(archivoSemanal , 0 , SEEK_SET);
+
+    for(int i = 0 ; i < len ; i++){
+        fwrite(&comandas[i] , sizeof(Comanda) , 1 , archivoSemanal);
+    }
+
+    fclose(archivoSemanal);
 }
 
-int obtenerCantidadRegistrosArchivo(char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "rb");
-
-    if(archivo == NULL){
-        cout << "Error: el archivo no se ha abierto correctamente." << endl;
-
-        cout << "No se ha podido obtener la 'cantidad de registros' del archivo." << endl;
-
-        return -1;
-    }
+int obtenerCantidadRegistrosArchivoComandas(FILE* archivo){
+    int cantRegs;
+    long posInicial = ftell(archivo);
 
 
+    // Posicionando el puntero al final del archivo:
     fseek(archivo , 0 , SEEK_END);
 
-    int cantRegs = ftell(archivo) / sizeof(Comanda);
+    cantRegs = ftell(archivo) / sizeof(Comanda);
 
-    fclose(archivo);
+    // Devolviendo el puntero a la posicion inicial:
+    fseek(archivo , posInicial , SEEK_SET);
 
 
     return cantRegs;
 }
 
-void cargarArrayComandasOrdenadoIDMozo(Comanda comandas[], int& len, char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "rb");
-
-    if(archivo == NULL){
-        cout << "Error: el archivo no se ha abierto correctamente." << endl;
-
-        cout << "No se ha podido 'cargar el array de comandas'." << endl;
-
-        return;
-    }
-
-    Comanda com;
-
-    while(fread(&com , sizeof(Comanda) , 1 , archivo) == 1){
-        insertarOrdenadoArrayIDMozo(comandas , len , com);
-    }
-
-    fclose(archivo);
-}
-
-void insertarOrdenadoArrayIDMozo(Comanda comandas[], int& len, Comanda com){
+void insertarOrdenadoIDMozoArrayComandas(Comanda comandas[], int& len, Comanda com){
     int i = 0;
 
     while(i < len && comandas[i].idMozo < com.idMozo){
@@ -304,37 +366,15 @@ void insertarOrdenadoArrayIDMozo(Comanda comandas[], int& len, Comanda com){
         len++;
     }
     else{
-        insertarPosEspecificaArray(comandas , len , com , i);
+        insertarPosEspecificaArrayComandas(comandas , len , com , i);
     }
 }
 
-void insertarPosEspecificaArray(Comanda comandas[], int& len, Comanda com, int pos){
+void insertarPosEspecificaArrayComandas(Comanda comandas[], int& len, Comanda com, int pos){
     for(int i = len ; i > pos ; i--){
         comandas[i] = comandas[i-1];
     }
 
     comandas[pos] = com;
     len++;
-}
-
-void actualizarArchivo(Comanda comandas[], int len, char nombreArchivo[]){
-    FILE* archivo = fopen(nombreArchivo , "wb");
-
-    if(archivo == NULL){
-        cout << "Error: el archivo no se ha abierto correctamente." << endl;
-
-        cout << "No se ha podido 'actualizar el archivo' para que quede ordenado." << endl;
-
-        return;
-    }
-
-    Comanda com;
-
-    for(int i = 0 ; i < len ; i++){
-        com = comandas[i];
-
-        fwrite(&com , sizeof(Comanda) , 1 , archivo);
-    }
-
-    fclose(archivo);
 }
