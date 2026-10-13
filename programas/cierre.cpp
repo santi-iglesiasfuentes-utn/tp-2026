@@ -36,7 +36,7 @@ int obtenerCantDiasMes(char[],char[]);
 int obtenerNumeroDiaActual(char[]);
 void avanzarDia(char[],Dia&);
 void cargarArchivoSemanal(char[],Dia,int,char[],char[],char[]);
-void ordenarArchivoIDMozo(char[]);
+void ordenarArchivoComandasIDMozo(char[]);
 int obtenerCantidadRegistrosArchivoComandas(FILE*);
 void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
 void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
@@ -93,7 +93,7 @@ int main(){
 
     cargarArchivoSemanal(nombreArchivoSemanal , diaActual , cantDiasMes , dia , mes , anio);
 
-    ordenarArchivoIDMozo(nombreArchivoSemanal);
+    ordenarArchivoComandasIDMozo(nombreArchivoSemanal);
 
 
 
@@ -304,7 +304,7 @@ void cargarArchivoSemanal(char nombreArchivo[], Dia diaActual, int cantDiasMes, 
     }
 }
 
-void ordenarArchivoIDMozo(char nombreArchivo[]){
+void ordenarArchivoComandasIDMozo(char nombreArchivo[]){
     FILE* archivoSemanal = fopen(nombreArchivo , "rb+");
 
     if(archivoSemanal == NULL){

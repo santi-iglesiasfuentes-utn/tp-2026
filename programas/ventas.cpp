@@ -52,7 +52,7 @@ int busquedaBinariaArchivoInventario(int,Producto&);
 bool verificarStockProducto(int,Producto);
 void ordenarArchivoComandasIDMozo(char[]);
 int obtenerCantidadRegistrosArchivoComandas(FILE*);
-void insertarOrdenadoArrayComandasIDMozo(Comanda[],int&,Comanda);
+void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
 void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
 
 
@@ -478,7 +478,7 @@ void ordenarArchivoComandasIDMozo(char nombreArchivo[]){
     Comanda com;
 
     while(fread(&com , sizeof(Comanda) , 1 , archivoComandas) == 1){
-        insertarOrdenadoArrayComandasIDMozo(comandas , len , com);
+        insertarOrdenadoIDMozoArrayComandas(comandas , len , com);
     }
 
 
@@ -511,7 +511,7 @@ int obtenerCantidadRegistrosArchivoComandas(FILE* archivo){
     return cantRegs;
 }
 
-void insertarOrdenadoArrayComandasIDMozo(Comanda comandas[], int& len, Comanda com){
+void insertarOrdenadoIDMozoArrayComandas(Comanda comandas[], int& len, Comanda com){
     int i = 0;
 
     while((i < len) && (comandas[i].idMozo < com.idMozo)){
