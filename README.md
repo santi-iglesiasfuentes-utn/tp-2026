@@ -54,7 +54,9 @@ crea el nuevo archivo y se carga la comanda.
 
 En caso de que el usuario ingrese un 'ID de mozo' invalido o un 'ID de mozo' valido
 pero una contraseña que no coincida con la guardada dentro del archivo "mozos.dat",
-el programa no lo deja continuar con la carga de información de la comanda.
+el programa le vuelve a pedir al usuario que ingrese la información y no lo deja 
+continuar con la carga de información de la comanda hasta que ingrese los datos
+válidos.
 
 Si al momento de cargar la información de la comanda se ingresa una cantidad de
 cierto producto que exceda la cantidad de stock disponible, se muestra un mensaje
