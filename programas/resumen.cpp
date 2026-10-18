@@ -108,7 +108,7 @@ void mostrarInformacionArchivo(char nombreArchivo[], char mes[], char numSemana[
     if(archivo != NULL){
         Comanda com;
 
-        int cantProdsVendidos = 0;
+        int cantProdsVendidosMozo = 0, cantProdsVendidosBuffet = 0;
         float totalComision = 0;
         int idMozo;
 
@@ -118,21 +118,25 @@ void mostrarInformacionArchivo(char nombreArchivo[], char mes[], char numSemana[
             idMozo = com.idMozo;
 
             while(leido == 1 && idMozo == com.idMozo){
-                cantProdsVendidos += com.cantidad;
+                cantProdsVendidosMozo += com.cantidad;
                 totalComision += com.comision;
+
+                cantProdsVendidosBuffet += com.cantidad;
 
                 leido = fread(&com , sizeof(Comanda) , 1 , archivo);
             }
 
             cout << "Informacion mozo " << idMozo << ":" << endl;
-            cout << "Cantidad de productos vendidos: " << cantProdsVendidos << endl;
+            cout << "Cantidad de productos vendidos: " << cantProdsVendidosMozo << endl;
             cout << "Total de comision a pagar: $" << totalComision << endl << endl;
 
 
             // Reiniciando variables:
-            cantProdsVendidos = 0;
+            cantProdsVendidosMozo = 0;
             totalComision = 0;
         }
+
+        cout << "Cantidad de productos vendidos por el buffet: " << cantProdsVendidosBuffet << endl << endl;
 
         fclose(archivo);
     }

@@ -46,6 +46,7 @@ bool validarFecha(char[]);
 void generarNombreArchivoComandas(char[],char[]);
 void cargarComandasEnArchivo(char[],char[]);
 int validarInfoMozo(int,char[]);
+void encriptarPasswordMozo(char[]);
 int obtenerCantidadRegistrosArchivoMozos();
 int busquedaDirectaArchivoMozos(Mozo&,int);
 int busquedaBinariaArchivoInventario(int,Producto&);
@@ -54,6 +55,7 @@ void ordenarArchivoComandasIDMozo(char[]);
 int obtenerCantidadRegistrosArchivoComandas(FILE*);
 void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
 void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
+void modificarStockRegistroEspecificoArchivoInventario(int,int);
 
 
 
@@ -165,7 +167,7 @@ void generarNombreArchivoComandas(char nombreArchivo[], char fecha[]){
 }
 
 void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
-    FILE* archivoComandas = fopen(nombreArchivo , "wb");
+    FILE* archivoComandas = fopen(nombreArchivo , "ab");
 
     if(archivoComandas == NULL){
         cout << "Error: el archivo no se ha abierto correctamente." << endl;
@@ -195,6 +197,7 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
 
         inicializarCadenaCaracteres(passwordMozo , 20);
 
+
         cout << "Digite el ID de mozo: ";
         cin >> idMozo;
 
@@ -217,6 +220,7 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
 
 
             inicializarCadenaCaracteres(passwordMozo , 20);
+
 
             cout << "Digite el ID de mozo: ";
             cin >> idMozo;
@@ -313,6 +317,10 @@ void cargarComandasEnArchivo(char fecha[], char nombreArchivo[]){
         fwrite(&com , sizeof(Comanda) , 1 , archivoComandas);
 
 
+        // Actualizando el inventario:
+        modificarStockRegistroEspecificoArchivoInventario(posProd , com.cantidad);
+
+
         cout << "\n\nCargar una nueva comanda (s/n): ";
         cin >> opc;
 
@@ -338,6 +346,8 @@ int validarInfoMozo(int idMozo, char passwordMozo[]){
         else{
             int i = 0;
 
+            encriptarPasswordMozo(passwordMozo);
+
             while(passwordMozo[i] != '\0' && mozo.password[i] != '\0'){
                 if(passwordMozo[i] != mozo.password[i]){
                     infoValida = -1;
@@ -354,6 +364,12 @@ int validarInfoMozo(int idMozo, char passwordMozo[]){
     }
 
     return infoValida;
+}
+
+void encriptarPasswordMozo(char password[]){
+    for(int i = 0 ; password[i] != '\0' ; i++){
+        password[i] += 5;
+    }
 }
 
 int obtenerCantidadRegistrosArchivoMozos(){
@@ -417,6 +433,7 @@ int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
     
     
     fseek(archivo , 0 , SEEK_END);
+
     int cantRegs = ftell(archivo) / sizeof(Producto);
 
     long izquierda = 0;
@@ -428,6 +445,7 @@ int busquedaBinariaArchivoInventario(int codProducto, Producto& prod){
         medio = (izquierda + derecha) / 2;
 
         fseek(archivo , medio * sizeof(Producto) , SEEK_SET);
+
         fread(&prod , sizeof(Producto) , 1 , archivo);
 
         if(prod.codigo == codProducto){
@@ -534,4 +552,34 @@ void insertarPosEspecificaArrayComandas(Comanda comandas[], int& len, Comanda co
 
     comandas[pos] = com;
     len++;
+}
+
+void modificarStockRegistroEspecificoArchivoInventario(int posProd, int cant){
+    FILE* archivo = fopen("inventario.dat" , "rb+");
+
+    if(archivo == NULL){
+        cout << "Error: el 'archivo de inventario' no se ha abierto correctamente." << endl;
+
+        cout << "No se ha podido 'modificar el registro de producto especifico'." << endl;
+
+        return;
+    }
+
+    Producto prod;
+
+
+    fseek(archivo , posProd * sizeof(Producto) , SEEK_SET);
+
+    fread(&prod , sizeof(Producto) , 1 , archivo);
+
+
+    prod.stock -= cant;
+
+
+    fseek(archivo , -1 * (long)sizeof(Producto) , SEEK_CUR);
+
+    fwrite(&prod , sizeof(Producto) , 1 , archivo);
+
+
+    fclose(archivo);
 }

@@ -37,22 +37,22 @@ struct Producto {
 
 
 
-// Prototipos de funciones:
+// Prototipos de funciones 'generales':
 void inicializarCadenaCaracteres(char[],int);
 
-// Prototipos de funciones de "archivo de inventario:"
+
+// Prototipos de funciones
+int obtenerCantidadRegistrosArchivoComandasHistoricas(FILE*);
+void generarNombreArchivoComandasDia(char[],char[]);
 void actualizarArchivoInventario(Comanda);
 long busquedaBinariaArchivoInventario(Comanda);
-void modificarRegistroEspecifico(long,Comanda);
-
-// Prototipos de funciones de 'mozos':
+void modificarStockRegistroEspecificoArchivoInventario(long,Comanda);
 int busquedaSecArchivoMozos(char[]);
 Mozo crearMozo(Comanda_historica,int);
 void crearContraseniaMozo(char[],int,char[]);
-void cargarMozoArchivoMozos(Mozo);
+void generarArchivoMozos(Mozo);
+void agregarMozoArchivoMozos(Mozo);
 void modificarComisionesMozoArchivoMozos(int,Comanda_historica);
-
-// Prototipos de funciones 'archivo de comandas del dia':
 Comanda cargarInfoComanda(Comanda_historica);
 void obtenerMozoPosEspecificaArchivoMozos(int,Mozo&);
 void agregarComandaArchivoComandasDia(char[],Comanda);
@@ -60,16 +60,33 @@ void ordenarArchivoComandasDia(char[]);
 int obtenerCantidadRegistrosArchivoComandas(FILE*);
 void insertarOrdenadoIDMozoArrayComandas(Comanda[],int&,Comanda);
 void insertarPosEspecificaArrayComandas(Comanda[],int&,Comanda,int);
+bool fechaCargadaArrayFechas(char[][11],int,char[]);
 
 
 
 
 int main(){
-    FILE* archivoComandas = fopen("comandas_historicas.dat" , "rb");
+    FILE* archivoComandasHistoricas = fopen("comandas_historicas.dat" , "rb");
 
-    if(archivoComandas != NULL){
+    if(archivoComandasHistoricas != NULL){
+        int cantRegs = obtenerCantidadRegistrosArchivoComandasHistoricas(archivoComandasHistoricas);
+
+
+
+        // Array para cargar las distintas fechas de las comandas historicas:
+        char fechas[cantRegs][11];
+        int lenFechas = 0;
+
+        for(int i = 0 ; i < cantRegs ; i++){
+            inicializarCadenaCaracteres(fechas[i] , 11);
+        }
+
+        bool fechaRegistrada;
+        int k = 0;
+
+
+
         int numComanda = 1;
-
         Comanda_historica com;
 
         // Variables para el 'archivo de mozos':
@@ -85,18 +102,18 @@ int main(){
 
 
 
-        while( fread(&com , sizeof(Comanda_historica) , 1 , archivoComandas) == 1 ){
+        while( fread(&com , sizeof(Comanda_historica) , 1 , archivoComandasHistoricas) == 1 ){
             inicializarCadenaCaracteres(nombreArchivoComandasDia , 30);
 
             // cout << "Numero de comanda: " << numComanda << endl;
 
 
 
-            /* Mozos: -------------------------------------------------------- */
+            /* Mozos: ---------------------------------------------------------------------------------- */
 
             if(numComanda == 1){
                 mozo = crearMozo(com , idMozo);
-                cargarMozoArchivoMozos(mozo);
+                generarArchivoMozos(mozo);
 
                 idMozo++;
             }
@@ -107,7 +124,7 @@ int main(){
 
                 if(posMozo == -1){
                     mozo = crearMozo(com , idMozo);
-                    cargarMozoArchivoMozos(mozo);
+                    agregarMozoArchivoMozos(mozo);
 
                     idMozo++;
                 }
@@ -118,23 +135,36 @@ int main(){
 
 
 
-            /* Comanda: ---------------------------------------------------------------*/
+            /* Comanda: ----------------------------------------------------------------------------------------*/
 
-            // Creando el nombre del archivo de dias:
-            strcpy(nombreArchivoComandasDia , "comandas_");
-            strcat(nombreArchivoComandasDia , com.fecha);
-            strcat(nombreArchivoComandasDia , ".dat");
+            generarNombreArchivoComandasDia(nombreArchivoComandasDia , com.fecha);
+
 
             comanda = cargarInfoComanda(com);
 
             agregarComandaArchivoComandasDia(nombreArchivoComandasDia , comanda);
 
-            ordenarArchivoComandasDia(nombreArchivoComandasDia);
 
 
 
 
-            /* Inventario: ---------------------------------------------------------------*/
+            // Registrando la fecha en el "array de fechas" en caso de que no este: ---------------------------
+
+            fechaRegistrada = fechaCargadaArrayFechas(fechas , lenFechas , com.fecha);
+
+            if(fechaRegistrada == false){
+                strcpy(fechas[k] , com.fecha);
+
+                lenFechas++;
+
+                k++;
+            }
+
+
+
+
+
+            /* Inventario: ----------------------------------------------------------------------------------*/
 
             actualizarArchivoInventario(comanda);
 
@@ -144,7 +174,18 @@ int main(){
             numComanda++;
         }
 
-        fclose(archivoComandas);
+        fclose(archivoComandasHistoricas);
+
+
+
+        // Ordenando los archivos de comandas de los distintos dias:
+        for(int i = 0 ; i < lenFechas ; i++){
+            inicializarCadenaCaracteres(nombreArchivoComandasDia , 30);
+
+            generarNombreArchivoComandasDia(nombreArchivoComandasDia , fechas[i]);
+
+            ordenarArchivoComandasDia(nombreArchivoComandasDia);
+        }
     }
     else{
         cout << "Error: el 'archivo de comandas historicas' no se ha abierto correctamente." << endl;
@@ -158,7 +199,7 @@ int main(){
 
 
 
-// Funciones:
+// Funciones "generales":
 
 void inicializarCadenaCaracteres(char cadena[], int max){
     for(int i = 0 ; i < max ; i++){
@@ -168,15 +209,34 @@ void inicializarCadenaCaracteres(char cadena[], int max){
 
 
 
-// Funciones de "inventario":
+// Funciones:
+
+int obtenerCantidadRegistrosArchivoComandasHistoricas(FILE* archivoComandasHistoricas){
+    long posInicial = ftell(archivoComandasHistoricas);
+
+    fseek(archivoComandasHistoricas , 0 , SEEK_END);
+
+    int cantRegs = ftell(archivoComandasHistoricas) / sizeof(Comanda_historica);
+
+    // Devolviendo el puntero del archivo a la posicion inicial:
+    fseek(archivoComandasHistoricas , posInicial , SEEK_SET);
+
+
+    return cantRegs;
+}
+
+void generarNombreArchivoComandasDia(char nombreArchivo[], char fecha[]){
+    strcpy(nombreArchivo , "comandas_");
+
+    strcat(nombreArchivo , fecha);
+    strcat(nombreArchivo , ".dat");
+}
 
 void actualizarArchivoInventario(Comanda com){
     long posProducto = busquedaBinariaArchivoInventario(com);
 
-    // cout << "Posicion: " << posProducto << endl;
-
     if(posProducto != -1){
-        modificarRegistroEspecifico(posProducto , com);
+        modificarStockRegistroEspecificoArchivoInventario(posProducto , com);
     }
 }
 
@@ -226,7 +286,7 @@ long busquedaBinariaArchivoInventario(Comanda com){
     return pos;
 }
 
-void modificarRegistroEspecifico(long posProd, Comanda com){
+void modificarStockRegistroEspecificoArchivoInventario(long posProd, Comanda com){
     FILE* archivo = fopen("inventario.dat" , "rb+");
 
     if(archivo == NULL){
@@ -256,10 +316,6 @@ void modificarRegistroEspecifico(long posProd, Comanda com){
     fclose(archivo);
 }
 
-
-
-// Funciones de "mozos":
-
 int busquedaSecArchivoMozos(char nombreMozo[]){
     FILE* archivoMozos = fopen("mozos.dat" , "rb");
 
@@ -279,6 +335,8 @@ int busquedaSecArchivoMozos(char nombreMozo[]){
             posMozo = mozo.idMozo - 1;
         }
     }
+
+    fclose(archivoMozos);
 
     return posMozo;
 }
@@ -314,7 +372,23 @@ void crearContraseniaMozo(char nombreMozo[], int maxNombre, char password[]){
     }
 }
 
-void cargarMozoArchivoMozos(Mozo mozo){
+void generarArchivoMozos(Mozo mozo){
+    FILE* archivoMozos = fopen("mozos.dat" , "wb");
+
+    if(archivoMozos == NULL){
+        cout << "Error: el 'archivo de mozos' no se ha abierto correctamente." << endl;
+
+        cout << "No se ha podido 'generar el archivo de mozos'." <<  endl;
+
+        return;
+    }
+
+    fwrite(&mozo , sizeof(Mozo) , 1 , archivoMozos);
+
+    fclose(archivoMozos);
+}
+
+void agregarMozoArchivoMozos(Mozo mozo){
     FILE* archivoMozos = fopen("mozos.dat" , "ab");
 
     if(archivoMozos == NULL){
@@ -344,7 +418,6 @@ void modificarComisionesMozoArchivoMozos(int posMozo, Comanda_historica com){
     Mozo mozo;
 
 
-    // Modificar el registro especifico:
     fseek(archivoMozos , posMozo * sizeof(Mozo) , SEEK_SET);
 
     fread(&mozo , sizeof(Mozo) , 1 , archivoMozos);
@@ -360,10 +433,6 @@ void modificarComisionesMozoArchivoMozos(int posMozo, Comanda_historica com){
 
     fclose(archivoMozos);
 }
-
-
-
-// Funciones de "comandas":
 
 Comanda cargarInfoComanda(Comanda_historica com){
     Comanda comanda;
@@ -491,4 +560,22 @@ void insertarPosEspecificaArrayComandas(Comanda comandasDia[], int& len, Comanda
 
     comandasDia[pos] = com;
     len++;
+}
+
+bool fechaCargadaArrayFechas(char fechas[][11], int lenFechas, char fecha[]){
+    /*
+        fechas[cantRegs][11] = { {"fecha1"} , {"fecha2"} , {"fecha3"} }
+    */
+
+    bool fechaCargada = false;
+
+    for(int i = 0 ; i < lenFechas ; i++){
+        if(strcmp(fechas[i] , fecha) == 0){
+            fechaCargada = true;
+
+            break;
+        }
+    }
+
+    return fechaCargada;
 }

@@ -3,7 +3,7 @@
 Trabajo Práctico grupal de **Algoritmos y Estructuras de Datos** (UTN FRBA) —
 unidad de **archivos binarios en C/C++**.
 
-> **Grupo:** 10
+> **Grupo:** 20
 > **Integrantes:** Santiago Iglesias Fuentes  -  santi-iglesiasfuentes-utn
 
 
@@ -30,6 +30,47 @@ posteriormente para ejecutar los programas de "ventas" y "cierre".
 
 Para ejecutar el programa de "resumen" se debe haber ejecutado al menos una vez
 el programa de "cierre" para tener un archivo de comandas semanal.
+
+
+
+
+## Compilación y Ejecución
+
+1) Prerrequisitos:
+
+Para compilar y ejecutar este proyecto es necesario tener un compilador de C++, por
+ejemplo "g++".
+
+Luego, clonar este repositorio en su computadora, e ingresar desde "Powershell" a la
+carpeta en donde lo haya clonado.
+
+
+2) Compilación
+
+para compilar cada uno de los programas deberá ejecutar los siguientes comandos
+en "Powershell":
+
+```
+g++ -O2 -o normalizacion normalizacion.cpp
+g++ -O2 -o ventas        ventas.cpp
+g++ -O2 -o cierre        cierre.cpp
+g++ -O2 -o resumen       resumen.cpp
+```
+
+Esto lo que hará será crear los ejecutables de cada uno de los programas.
+
+
+3) Ejecución
+
+Para ejecutar un programa, ingrese el comando en "Powershell" correspondiente al programa
+que desea ejecutar:
+
+```
+./normalizacion
+./ventas
+./cierre
+./resumen
+```
 
 
 
