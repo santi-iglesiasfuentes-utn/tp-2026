@@ -117,6 +117,7 @@ int main(){
         lenFechas++;
 
         avanzarDia(fecha);
+        diaActual.numero++;
         i++;
     }
 
